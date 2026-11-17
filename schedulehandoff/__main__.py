@@ -1,7 +1,7 @@
 import argparse,json,tempfile
 from pathlib import Path
-from . import operations,report,changes
-COMMANDS=['room-import', 'substitute-assign', 'notice-evaluate','substitute-withdraw','notice-resend']
+from . import operations,report,changes,planner
+COMMANDS=['room-import', 'substitute-assign', 'notice-evaluate','substitute-withdraw','notice-resend','plan-reschedule','approve-reschedule']
 def main():
     parser=argparse.ArgumentParser()
     sub=parser.add_subparsers(dest='command',required=True)
@@ -17,6 +17,7 @@ def main():
         print(report.build(root/'ledger.db',root/'report.json'))
     elif x.command=='report':print(report.build(x.db,x.out))
     else:
-        fn=[operations.first,operations.second,operations.third,changes.withdraw,changes.resend][COMMANDS.index(x.command)]
+        fn=[operations.first,operations.second,operations.third,changes.withdraw,changes.resend,
+            planner.plan,planner.approve][COMMANDS.index(x.command)]
         print(json.dumps(fn(x.db,x.file),ensure_ascii=False))
 if __name__=='__main__':main()
