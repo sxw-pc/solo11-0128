@@ -127,3 +127,31 @@ def test_partial_joint_plan_cannot_be_applied(tmp_path):
     assert planner.plan(db,write(tmp_path,'plan.json',request))['status']=='待协调'
     approval={'version':'v1','rows':[{'plan_id':'P1','version':'v1','approver':'principal'}]}
     assert planner.approve(db,write(tmp_path,'approval.json',approval))[0]['reason']=='plan_incomplete'
+
+def test_joint_plan_approval_rechecks_late_room_conflict(tmp_path):
+    db=roster_for_plan(tmp_path)
+    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30}],
+             'rows':[{'id':'L1','subject':'math','start':'2026-01-01T09:00:00','end':'2026-01-01T10:00:00',
+                      'enrolled':20,'candidate_rooms':['R1'],'candidate_teachers':['T1']}]}
+    assert planner.plan(db,write(tmp_path,'plan.json',request))['status']=='可确认'
+    operations.first(db,write(tmp_path,'late-room.json',{'version':'v1','rows':[
+        slot('L3',room='R1',start='2026-01-01T09:15:00',end='2026-01-01T10:15:00')]}))
+    approval={'version':'v1','rows':[{'plan_id':'P1','version':'v1','approver':'principal'}]}
+    assert planner.approve(db,write(tmp_path,'approval.json',approval))[0]['reason']=='resource_changed_since_plan'
+    conn=connect(db)
+    assert conn.execute("SELECT status FROM reschedule_plan WHERE id='P1'").fetchone()[0]=='可确认'
+    assert conn.execute("SELECT count(*) FROM room_slot WHERE id='P1:L1'").fetchone()[0]==0
+
+def test_joint_plan_approval_rechecks_late_teacher_conflict(tmp_path):
+    db=roster_for_plan(tmp_path)
+    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30}],
+             'rows':[{'id':'L1','subject':'math','start':'2026-01-01T09:00:00','end':'2026-01-01T10:00:00',
+                      'enrolled':20,'candidate_rooms':['R1'],'candidate_teachers':['T1']}]}
+    assert planner.plan(db,write(tmp_path,'plan.json',request))['status']=='可确认'
+    operations.first(db,write(tmp_path,'late-room.json',{'version':'v1','rows':[
+        slot('L3',room='R3',start='2026-01-01T09:15:00',end='2026-01-01T10:15:00')]}))
+    operations.second(db,write(tmp_path,'late-teacher.json',{'version':'v1','rows':[
+        {'id':'S3','lesson':'L3','teacher':'T1','subject':'math','qualified':['math'],
+         'busy':[],'accepted':True}]}))
+    approval={'version':'v1','rows':[{'plan_id':'P1','version':'v1','approver':'principal'}]}
+    assert planner.approve(db,write(tmp_path,'approval.json',approval))[0]['reason']=='resource_changed_since_plan'

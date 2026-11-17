@@ -5,6 +5,15 @@ from .store import connect,save,decide
 from .operations import overlap
 
 
+def _still_available(db, plan_id, assignments):
+    rooms=[json.loads(x['body']) for x in db.execute("SELECT body FROM room_slot WHERE status='可用' AND id NOT LIKE ?",(f'{plan_id}:%',))]
+    teachers=[json.loads(x['body']) for x in db.execute("SELECT body FROM substitution WHERE status='已委托' AND id NOT LIKE ?",(f'{plan_id}:%',))]
+    for item in assignments:
+        if any(x['room']==item['room'] and overlap(x['start'],x['end'],item['start'],item['end']) for x in rooms):return False
+        if any(x['teacher']==item['teacher'] and overlap(x['start'],x['end'],item['start'],item['end']) for x in teachers):return False
+    return True
+
+
 def plan(path,file):
     source,payload=capture(path,'desktop_reschedule_request',file)
     lessons=payload.get('rows',[]);rooms=payload.get('rooms',[])
@@ -79,6 +88,8 @@ def approve(path,file):
                     results.append(decide(db,'联合调课',plan_id,old['status'],old['reason'],source));continue
                 if not plan_row or plan_row['status']!='可确认':status,reason='拒绝','plan_incomplete'
                 elif not row.get('approver') or row.get('version')!=plan_row['version']:status,reason='拒绝','approval_invalid'
+                elif not _still_available(db,plan_id,json.loads(plan_row['body'])['assignments']):
+                    status,reason='拒绝','resource_changed_since_plan'
                 else:
                     status,reason='已应用','joint_plan_applied'
                     plan_body=json.loads(plan_row['body'])
