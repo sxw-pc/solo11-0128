@@ -1,0 +1,1 @@
+{"version":"v1","rows":[{"id":"meter-1","circuit":"C1","room":"R1","at":"2026-01-01T09:00:00","amps":8,"rated_amp":10},{"id":"meter-2","circuit":"C2","room":"R2","at":"2026-01-01T09:00:00","amps":11,"rated_amp":10}]}
