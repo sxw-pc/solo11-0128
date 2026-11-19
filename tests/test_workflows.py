@@ -94,18 +94,20 @@ def test_resend_cannot_expand_frozen_class_scope(tmp_path):
 def roster_for_plan(tmp_path):
     db=tmp_path/'db'
     operations.first(db,write(tmp_path,'rooms.json',{'version':'v1','rows':[
-        slot('L0',start='2026-01-01T08:00:00',end='2026-01-01T09:00:00'),
-        slot('Lx',room='R2',start='2026-01-01T08:00:00',end='2026-01-01T09:00:00')]}))
+        {**slot('L0',start='2026-01-01T08:00:00',end='2026-01-01T09:00:00'),'class':'C0','room_site':'EAST'},
+        {**slot('Lx',room='R2',start='2026-01-01T08:00:00',end='2026-01-01T09:00:00'),'class':'Cx','room_site':'EAST'}]}))
     operations.second(db,write(tmp_path,'staff.json',{'version':'v1','rows':[
-        {'id':'S0','lesson':'L0','teacher':'T1','subject':'math','qualified':['math'],'busy':[],'accepted':True},
-        {'id':'Sx','lesson':'Lx','teacher':'T2','subject':'math','qualified':['math'],'busy':[],'accepted':True}]}))
+        {'id':'S0','lesson':'L0','teacher':'T1','subject':'math','qualified':['math'],'busy':[],
+         'accepted':True,'teaching_site':'EAST','room_site':'EAST','class':'C0','room':'R1'},
+        {'id':'Sx','lesson':'Lx','teacher':'T2','subject':'math','qualified':['math'],'busy':[],
+         'accepted':True,'teaching_site':'EAST','room_site':'EAST','class':'Cx','room':'R2'}]}))
     return db
 
 def test_joint_reschedule_matches_two_resources_and_flows_into_notice(tmp_path):
     db=roster_for_plan(tmp_path)
     lessons=[{'id':id,'subject':'math','start':'2026-01-01T09:00:00','end':'2026-01-01T10:00:00',
-              'enrolled':20,'candidate_rooms':['R1','R2'],'candidate_teachers':['T1','T2']} for id in ('L1','L2')]
-    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30},{'id':'R2','capacity':30}], 'rows':lessons}
+              'enrolled':20,'class':'C1','candidate_rooms':['R1','R2'],'candidate_teachers':['T1','T2']} for id in ('L1','L2')]
+    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30,'site':'EAST'},{'id':'R2','capacity':30,'site':'EAST'}], 'rows':lessons}
     plan_file=write(tmp_path,'plan.json',request)
     result=planner.plan(db,plan_file)
     assert result['status']=='可确认' and len({x['room'] for x in result['assignments']})==2
@@ -122,17 +124,17 @@ def test_joint_reschedule_matches_two_resources_and_flows_into_notice(tmp_path):
 def test_partial_joint_plan_cannot_be_applied(tmp_path):
     db=roster_for_plan(tmp_path)
     lessons=[{'id':id,'subject':'math','start':'2026-01-01T09:00:00','end':'2026-01-01T10:00:00',
-              'enrolled':20,'candidate_rooms':['R1'],'candidate_teachers':['T1','T2']} for id in ('L1','L2')]
-    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30}],'rows':lessons}
+              'enrolled':20,'class':'C1','candidate_rooms':['R1'],'candidate_teachers':['T1','T2']} for id in ('L1','L2')]
+    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30,'site':'EAST'}],'rows':lessons}
     assert planner.plan(db,write(tmp_path,'plan.json',request))['status']=='待协调'
     approval={'version':'v1','rows':[{'plan_id':'P1','version':'v1','approver':'principal'}]}
     assert planner.approve(db,write(tmp_path,'approval.json',approval))[0]['reason']=='plan_incomplete'
 
 def test_joint_plan_approval_rechecks_late_room_conflict(tmp_path):
     db=roster_for_plan(tmp_path)
-    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30}],
+    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30,'site':'EAST'}],
              'rows':[{'id':'L1','subject':'math','start':'2026-01-01T09:00:00','end':'2026-01-01T10:00:00',
-                      'enrolled':20,'candidate_rooms':['R1'],'candidate_teachers':['T1']}]}
+                      'enrolled':20,'class':'C1','candidate_rooms':['R1'],'candidate_teachers':['T1']}]}
     assert planner.plan(db,write(tmp_path,'plan.json',request))['status']=='可确认'
     operations.first(db,write(tmp_path,'late-room.json',{'version':'v1','rows':[
         slot('L3',room='R1',start='2026-01-01T09:15:00',end='2026-01-01T10:15:00')]}))
@@ -144,9 +146,9 @@ def test_joint_plan_approval_rechecks_late_room_conflict(tmp_path):
 
 def test_joint_plan_approval_rechecks_late_teacher_conflict(tmp_path):
     db=roster_for_plan(tmp_path)
-    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30}],
+    request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30,'site':'EAST'}],
              'rows':[{'id':'L1','subject':'math','start':'2026-01-01T09:00:00','end':'2026-01-01T10:00:00',
-                      'enrolled':20,'candidate_rooms':['R1'],'candidate_teachers':['T1']}]}
+                      'enrolled':20,'class':'C1','candidate_rooms':['R1'],'candidate_teachers':['T1']}]}
     assert planner.plan(db,write(tmp_path,'plan.json',request))['status']=='可确认'
     operations.first(db,write(tmp_path,'late-room.json',{'version':'v1','rows':[
         slot('L3',room='R3',start='2026-01-01T09:15:00',end='2026-01-01T10:15:00')]}))
