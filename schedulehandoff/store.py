@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-TABLES=['schedule_export', 'room_slot', 'teacher', 'substitution', 'notice_batch', 'notice_receipt', 'withdrawal', 'notice_attempt', 'notice_delivery', 'reschedule_plan', 'reschedule_assignment', 'reschedule_approval']
+TABLES=['schedule_export', 'room_slot', 'teacher', 'substitution', 'notice_batch', 'notice_receipt', 'withdrawal', 'notice_attempt', 'notice_delivery', 'reschedule_plan', 'reschedule_assignment', 'reschedule_approval', 'air_sample', 'air_case']
 SCHEMA="""
 PRAGMA foreign_keys=ON;
 CREATE TABLE IF NOT EXISTS export_file(id INTEGER PRIMARY KEY,kind TEXT NOT NULL,version TEXT NOT NULL,hash TEXT NOT NULL,body BLOB NOT NULL,created TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(kind,hash));
@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS notice_delivery(id TEXT PRIMARY KEY,source_id INT REF
 CREATE TABLE IF NOT EXISTS reschedule_plan(id TEXT PRIMARY KEY,source_id INT REFERENCES export_file(id),version TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL,reason TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reschedule_assignment(id TEXT PRIMARY KEY,source_id INT REFERENCES export_file(id),version TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL,reason TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reschedule_approval(id TEXT PRIMARY KEY,source_id INT REFERENCES export_file(id),version TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL,reason TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS air_sample(id TEXT PRIMARY KEY,source_id INT REFERENCES export_file(id),version TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL,reason TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS air_case(id TEXT PRIMARY KEY,source_id INT REFERENCES export_file(id),version TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL,reason TEXT NOT NULL);
 """
 def connect(path):
     p=Path(path);p.parent.mkdir(parents=True,exist_ok=True)
