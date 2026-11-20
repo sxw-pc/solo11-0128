@@ -9,6 +9,21 @@ def overlap(a,b,c,d):
     return datetime.fromisoformat(a)<datetime.fromisoformat(d) and datetime.fromisoformat(c)<datetime.fromisoformat(b)
 
 
+def class_periods(db,room,start,end):
+    """可用 class slots of one room overlapping a window, with their sources.
+
+    enrolled is only the expected headcount (应到人数); actual occupancy
+    must come from door counts and timestamped class-change records, so
+    this helper is the schedule-side input of the ventilation assessment.
+    """
+    out=[]
+    for x in db.execute("SELECT source_id,body FROM room_slot WHERE status='可用'"):
+        body=json.loads(x['body'])
+        if body.get('room')==room and overlap(body['start'],body['end'],start,end):
+            out.append({'source_id':x['source_id'],'body':body})
+    return out
+
+
 def first(path,file):
     source,payload=capture(path,'desktop_schedule',file)
     db=connect(path);results=[]

@@ -1,0 +1,3 @@
+{"version":"v1","rows":[
+{"id":"C1","sensor":"SR1","zero_lo":0,"zero_hi":0,"lag_lo":0,"lag_hi":0},
+{"id":"C2","sensor":"SR2","zero_lo":0,"zero_hi":0,"lag_lo":0,"lag_hi":0}]}

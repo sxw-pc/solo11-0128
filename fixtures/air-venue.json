@@ -1,0 +1,5 @@
+{"version":"v1","rows":[
+{"kind":"room","id":"PR1","room":"R1","volume_m3":180,"activity":"lecture","sensor":"SR1"},
+{"kind":"room","id":"PR2","room":"R2","volume_m3":180,"activity":"lecture","sensor":"SR2"},
+{"kind":"activity","id":"lecture","rate_lo":7,"rate_hi":13},
+{"kind":"outdoor","id":"O1","start":"2026-01-01T08:00:00","end":"2026-01-01T12:00:00","ppm":400}]}
