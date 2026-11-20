@@ -1,0 +1,18 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "N1",
+      "lesson": "P1:LD",
+      "required_classes": [
+        "C1"
+      ],
+      "receipts": [
+        {
+          "class": "C1",
+          "version": "v1"
+        }
+      ]
+    }
+  ]
+}

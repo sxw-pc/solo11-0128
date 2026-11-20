@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "RT-EW-WALK",
+      "from": "东校区",
+      "to": "西校区",
+      "service": "步行",
+      "minutes": 8
+    },
+    {
+      "id": "RT-EW-BUS",
+      "from": "东校区",
+      "to": "西校区",
+      "service": "校车接送",
+      "minutes": 20
+    }
+  ]
+}

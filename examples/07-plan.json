@@ -1,0 +1,28 @@
+{
+  "version": "v1",
+  "plan_id": "P1",
+  "rooms": [
+    {
+      "id": "RW",
+      "capacity": 30,
+      "location": "西校区"
+    }
+  ],
+  "rows": [
+    {
+      "id": "LD",
+      "class": "C1",
+      "subject": "math",
+      "start": "2026-01-01T10:10:00",
+      "end": "2026-01-01T11:10:00",
+      "enrolled": 20,
+      "candidate_rooms": [
+        "RW"
+      ],
+      "candidate_teachers": [
+        "T1"
+      ],
+      "remote": false
+    }
+  ]
+}

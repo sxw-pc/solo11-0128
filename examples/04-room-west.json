@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "LW",
+      "room": "RW",
+      "start": "2026-01-01T08:00:00",
+      "end": "2026-01-01T08:50:00",
+      "capacity": 35,
+      "enrolled": 30,
+      "class": "CW",
+      "location": "西校区"
+    }
+  ]
+}

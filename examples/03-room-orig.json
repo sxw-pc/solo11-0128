@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "L0",
+      "room": "RE",
+      "start": "2026-01-01T09:00:00",
+      "end": "2026-01-01T10:00:00",
+      "capacity": 35,
+      "enrolled": 30,
+      "class": "C1",
+      "location": "东校区"
+    }
+  ]
+}

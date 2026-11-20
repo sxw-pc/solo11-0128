@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "plan_id": "P1",
+      "version": "v1",
+      "approver": "principal"
+    }
+  ]
+}
