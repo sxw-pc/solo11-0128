@@ -1,0 +1,28 @@
+{
+  "version": "v1",
+  "kits": [
+    {"id": "KIT-A", "model": "classroom_av", "items": ["CAM1", "MIC1", "MIC2", "BAT1"]}
+  ],
+  "rows": [
+    {
+      "id": "K1",
+      "borrower": "T1",
+      "agreement": "personal_custody",
+      "team": ["T1", "T2"],
+      "serials": ["CAM1", "MIC1", "MIC2", "BAT1"],
+      "station": "S1",
+      "time": "2026-01-01T09:00:00",
+      "clock_skew_seconds": 300
+    },
+    {
+      "id": "K2",
+      "borrower": "T3",
+      "agreement": "team_shared",
+      "team": ["T3", "T4"],
+      "serials": ["CAM2", "MIC9", "BAT2", "BAT3"],
+      "station": "S1",
+      "time": "2026-01-01T09:05:00",
+      "clock_skew_seconds": 300
+    }
+  ]
+}

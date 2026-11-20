@@ -1,0 +1,23 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "R1",
+      "loan": "K1",
+      "serials": ["CAM1", "CAM1"],
+      "station": "S3",
+      "time": "2026-01-01T10:00:00",
+      "returner": "T2",
+      "note": "CAM1 被扫码枪重复触发两次，系统只计一次；MIC1/MIC2/BAT1 缺件"
+    },
+    {
+      "id": "R2",
+      "loan": "K1",
+      "serials": ["MIC9"],
+      "station": "S3",
+      "time": "2026-01-01T10:02:00",
+      "returner": "T2",
+      "note": "MIC9 属于 K2，是混入 K1 归还盒的同型号麦克风，不能冒充 MIC1"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "H1",
+      "loan": "K1",
+      "giver": "T1",
+      "receiver": "T2",
+      "serials": ["CAM1"],
+      "scope": "item",
+      "signed": true,
+      "signature_id": "SG1",
+      "station": "S2",
+      "time": "2026-01-01T09:30:00"
+    },
+    {
+      "id": "H2",
+      "loan": "K1",
+      "giver": "T1",
+      "receiver": "T2",
+      "serials": [],
+      "scope": "kit",
+      "signed": false,
+      "station": "S2",
+      "time": "2026-01-01T09:40:00",
+      "note": "整套移交但签名迟到，serials 在导入时按借用单配置展开"
+    },
+    {
+      "id": "H3",
+      "loan": "K1",
+      "giver": "T1",
+      "receiver": "T3",
+      "serials": ["MIC1"],
+      "scope": "item",
+      "signed": true,
+      "signature_id": "SG3",
+      "station": "S4",
+      "time": "2026-01-01T09:33:00",
+      "note": "与 H1 同处时钟偏差窗口，形成两条相容链，缺件时责任待核"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "version": "v2",
+  "rows": [
+    {
+      "signature_id": "SG2",
+      "handoff": "H2",
+      "signed_by": "T2",
+      "station": "S2",
+      "time": "2026-01-01T11:20:00",
+      "note": "迟到的签名：交接发生在 09:40，签名在课后补录"
+    }
+  ]
+}
