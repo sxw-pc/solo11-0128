@@ -76,6 +76,48 @@ def third(path,file):
     finally:db.close()
 
 
+def correct(path,file):
+    """Time correction for an already captured lesson.
+
+    The corrected ``room_slot`` is written under a *new* ``room_slot`` id
+    (``<lesson>@<version>``) and the superseded snapshot is marked
+    ``已更正``.  ``power`` only ever looks at ``status='可用'`` rows, so a
+    corrected lesson stops being treated as occupying the room at the old
+    time and a newer snapshot can put a different lesson there.  The original
+    room_slot row is preserved as evidence, never overwritten.
+    """
+    source,payload=capture(path,'desktop_schedule_correction',file)
+    db=connect(path);results=[]
+    try:
+        with db:
+            for row in payload.get('rows',[]):
+                lesson=str(row['lesson']);old_key=str(row.get('room_slot',lesson))
+                base=db.execute('SELECT * FROM room_slot WHERE id=?',(old_key,)).fetchone()
+                base_body=json.loads(base['body']) if base else {}
+                enrolled=int(row.get('enrolled',base_body.get('enrolled',0)))
+                capacity=int(row.get('capacity',base_body.get('capacity',0)))
+                if not base or base['status']!='可用':
+                    status,reason='拒绝','room_slot_not_active'
+                elif datetime.fromisoformat(row['start'])>=datetime.fromisoformat(row['end']):
+                    status,reason='待协调','bad_interval'
+                elif enrolled>capacity:
+                    status,reason='待协调','capacity_exceeded'
+                else:
+                    body=json.loads(base['body']);body.update({k:v for k,v in row.items() if k in ('room','start','end','capacity','enrolled')})
+                    prior=[json.loads(x['body']) for x in db.execute("SELECT body FROM room_slot WHERE status='可用' AND id<>? AND id<>?",(old_key,lesson))]
+                    if any(x['room']==body['room'] and overlap(x['start'],x['end'],body['start'],body['end']) for x in prior):
+                        status,reason='待协调','room_overlap'
+                    else:
+                        db.execute("UPDATE room_slot SET status='已更正',reason='superseded_by_correction' WHERE id=?",(old_key,))
+                        new_key=f"{lesson}@{payload['version']}"
+                        save(db,'room_slot',new_key,source,payload['version'],body,'可用','corrected_interval')
+                        status,reason='已更正','corrected_interval'
+                save(db,'schedule_correction',f"{lesson}:{payload['version']}",source,payload['version'],row,status,reason)
+                results.append(decide(db,'教室占用',lesson,status,reason,source))
+        return results
+    finally:db.close()
+
+
 def demo(root):
     import json
     db=root/'ledger.db';files=[
