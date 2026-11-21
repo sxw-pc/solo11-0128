@@ -1,1 +1,40 @@
-{"version":"v1","rows":[{"id":"pickup-1","child_id":"C1","authorized_names":["Parent A"],"person_name":"Parent A","at":"2026-01-01T10:00:00"}]}
+{
+  "version": "v1",
+  "students": [
+    {"id": "C1", "name": "Student C1", "class_id": "C1", "guardian_id": "G-A"}
+  ],
+  "guardians": [
+    {"id": "G-A", "name": "Parent A", "id_type": "national_id", "id_number": "IDA-001", "student_ids": ["C1"]}
+  ],
+  "contracts": [
+    {"id": "K-normal", "student_id": "C1", "guardian_id": "G-A", "mode": "delegate",
+     "signed_at": "2026-01-01T09:00:00", "scope": ["C1"]},
+    {"id": "K-guardian-only", "student_id": "C1", "guardian_id": "G-A", "mode": "guardian_only",
+     "signed_at": "2026-01-01T09:05:00", "scope": ["C1"]}
+  ],
+  "delegations": [
+    {"id": "D1", "student_id": "C1", "contract_id": "K-normal", "issuer_id": "G-A",
+     "delegate_id": "G-B", "delegate_name": "Parent B",
+     "delegate_id_type": "national_id", "delegate_id_number": "IDB-777",
+     "valid_from": "2026-01-01T10:30:00", "valid_to": "2026-01-01T10:45:00",
+     "issued_at": "2026-01-01T10:25:00", "scope": ["C1"]}
+  ],
+  "sessions": [
+    {"id": "S-C1", "student_id": "C1", "class_id": "C1", "lesson_id": "L1",
+     "pickup_at": "2026-01-01T10:35:00", "assigned_exit": "east", "contract_id": "K-normal"}
+  ],
+  "credentials": [
+    {"id": "K1", "session_id": "S-C1", "serial": 1, "exit": "east"}
+  ],
+  "events": [
+    {"id": "e-id", "session_id": "S-C1", "kind": "identity_check", "at": "2026-01-01T10:35:00",
+     "person_id": "G-B", "person_name": "Parent B", "id_type": "national_id", "id_number": "IDB-777"},
+    {"id": "e-teach", "session_id": "S-C1", "kind": "teacher_handover", "at": "2026-01-01T10:31:00",
+     "credential_id": "K1", "exit": "east"},
+    {"id": "e-recv", "session_id": "S-C1", "kind": "exit_receipt", "at": "2026-01-01T10:33:00",
+     "credential_id": "K1", "exit": "east"},
+    {"id": "e-rel", "session_id": "S-C1", "kind": "pickup_release", "at": "2026-01-01T10:35:00",
+     "credential_id": "K1", "exit": "east", "person_id": "G-B", "person_name": "Parent B",
+     "id_type": "national_id", "id_number": "IDB-777"}
+  ]
+}

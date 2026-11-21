@@ -142,6 +142,49 @@ def test_joint_plan_approval_rechecks_late_room_conflict(tmp_path):
     assert conn.execute("SELECT status FROM reschedule_plan WHERE id='P1'").fetchone()[0]=='可确认'
     assert conn.execute("SELECT count(*) FROM room_slot WHERE id='P1:L1'").fetchone()[0]==0
 
+def test_schedule_correction_supersedes_old_snapshot_but_keeps_history(tmp_path):
+    db = tmp_path / 'db'
+    operations.first(db, write(tmp_path, 'rooms.json', {'version': 'v1', 'rows': [slot('L1')]}))
+    operations.first(db, write(tmp_path, 'rooms-v2.json', {'version': 'v2', 'rows': [
+        slot('L1', end='2026-01-01T11:00:00')]}))
+    conn = connect(db)
+    body = json.loads(conn.execute("SELECT body FROM room_slot WHERE id='L1'").fetchone()['body'])
+    assert body['end'] == '2026-01-01T11:00:00'
+    history = conn.execute("SELECT * FROM entity_history WHERE table_name='room_slot' AND entity_id='L1'").fetchall()
+    assert any(json.loads(row['body'])['end'] == '2026-01-01T10:00:00' for row in history)
+
+
+def test_notice_records_lesson_end_and_class_edition(tmp_path):
+    db = tmp_path / 'db'
+    operations.first(db, write(tmp_path, 'rooms.json', {'version': 'v1', 'rows': [slot('L1')]}))
+    operations.second(db, write(tmp_path, 'staff.json', {'version': 'v1', 'rows': [
+        {'id': 'S1', 'lesson': 'L1', 'teacher': 'T1', 'subject': 'math',
+         'qualified': ['math'], 'busy': [], 'accepted': True}]}))
+    operations.third(db, write(tmp_path, 'notice.json', {'version': 'v1', 'rows': [
+        {'id': 'N1', 'lesson': 'L1', 'required_classes': ['C1'],
+         'receipts': [{'class': 'C1', 'version': 'v1'}]}]}))
+    body = json.loads(connect(db).execute("SELECT body FROM notice_batch WHERE id='N1'").fetchone()['body'])
+    assert body['lesson_end'] == '2026-01-01T10:00:00'
+    assert body['class_versions'] == {'C1': 'v1'}
+
+
+def test_lesson_end_correction_reopens_current_notice(tmp_path):
+    db = tmp_path / 'db'
+    operations.first(db, write(tmp_path, 'rooms.json', {'version': 'v1', 'rows': [slot('L1')]}))
+    operations.second(db, write(tmp_path, 'staff.json', {'version': 'v1', 'rows': [
+        {'id': 'S1', 'lesson': 'L1', 'teacher': 'T1', 'subject': 'math',
+         'qualified': ['math'], 'busy': [], 'accepted': True}]}))
+    operations.third(db, write(tmp_path, 'notice.json', {'version': 'v1', 'rows': [
+        {'id': 'N1', 'lesson': 'L1', 'required_classes': ['C1'],
+         'receipts': [{'class': 'C1', 'version': 'v1'}]}]}))
+    assert connect(db).execute("SELECT status FROM notice_batch WHERE id='N1'").fetchone()[0] == '换班生效'
+    # Same version, corrected dismissal time: the notice no longer matches.
+    operations.first(db, write(tmp_path, 'rooms-late.json', {'version': 'v1', 'rows': [
+        slot('L1', end='2026-01-01T11:00:00')]}))
+    row = connect(db).execute("SELECT status,reason FROM notice_batch WHERE id='N1'").fetchone()
+    assert row['status'] == '待重新通知' and row['reason'] == 'lesson_end_changed'
+
+
 def test_joint_plan_approval_rechecks_late_teacher_conflict(tmp_path):
     db=roster_for_plan(tmp_path)
     request={'version':'v1','plan_id':'P1','rooms':[{'id':'R1','capacity':30}],

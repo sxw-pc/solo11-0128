@@ -11,19 +11,37 @@ def overlap(a,b,c,d):
 
 def first(path,file):
     source,payload=capture(path,'desktop_schedule',file)
-    db=connect(path);results=[]
+    db=connect(path);results=[];revised=set()
     try:
         with db:
             save(db,'schedule_export',f'export:{source}',source,payload['version'],
                  {'version':payload['version'],'count':len(payload.get('rows',[]))},'已采录','snapshot_frozen')
             for row in payload.get('rows',[]):
                 key=str(row['id']);prior=[json.loads(x['body']) for x in db.execute("SELECT body FROM room_slot WHERE status='可用' AND id<>?",(key,))]
+                old=db.execute('SELECT * FROM room_slot WHERE id=?',(key,)).fetchone()
                 if datetime.fromisoformat(row['start'])>=datetime.fromisoformat(row['end']):status,reason='待协调','bad_interval'
                 elif int(row['enrolled'])>int(row['capacity']):status,reason='待协调','capacity_exceeded'
                 elif any(x['room']==row['room'] and overlap(x['start'],x['end'],row['start'],row['end']) for x in prior):status,reason='待协调','room_overlap'
                 else:status,reason='可用','room_available'
-                save(db,'room_slot',key,source,payload['version'],row,status,reason)
+                if old and old['body']!=json.dumps(row,sort_keys=True,ensure_ascii=False):revised.add(key)
+                # A corrected desktop export supersedes the lesson but keeps the old
+                # snapshot in entity_history for the audit report.
+                save(db,'room_slot',key,source,payload['version'],row,status,reason,allow_revision=True)
                 results.append(decide(db,'教室占用',key,status,reason,source))
+            # A lesson end time is part of the dismissal window.  When it changes,
+            # any notice already computed for the old snapshot is no longer an
+            # effective notice for the current timetable.
+            for notice in db.execute('SELECT * FROM notice_batch'):
+                body=json.loads(notice['body'])
+                if str(body.get('lesson')) in revised and notice['version']!=payload['version']:
+                    db.execute("UPDATE notice_batch SET status='待重新通知',reason='schedule_revised' WHERE id=?",
+                               (notice['id'],))
+                elif str(body.get('lesson')) in revised and notice['version']==payload['version']:
+                    current=json.loads(db.execute('SELECT body FROM room_slot WHERE id=?',
+                                                  (str(body.get('lesson')),)).fetchone()['body'])
+                    if body.get('lesson_end')!=current.get('end'):
+                        db.execute("UPDATE notice_batch SET status='待重新通知',reason='lesson_end_changed' WHERE id=?",
+                                   (notice['id'],))
         return results
     finally:db.close()
 
@@ -46,9 +64,9 @@ def second(path,file):
                 elif busy or parallel:status,reason='待协调','teacher_busy'
                 elif not row.get('accepted',False):status,reason='待协调','teacher_not_accepted'
                 else:status,reason='已委托','qualified_and_available'
-                save(db,'teacher',teacher,source,payload['version'],{'qualified':row.get('qualified',[]),'busy':row.get('busy',[])},'已登记','roster_captured')
+                save(db,'teacher',teacher,source,payload['version'],{'qualified':row.get('qualified',[]),'busy':row.get('busy',[])},'已登记','roster_captured',allow_revision=True)
                 detail=dict(row,start=lesson_data.get('start'),end=lesson_data.get('end'))
-                save(db,'substitution',lesson,source,payload['version'],detail,status,reason)
+                save(db,'substitution',lesson,source,payload['version'],detail,status,reason,allow_revision=True)
                 results.append(decide(db,'教师代课',lesson,status,reason,source))
         return results
     finally:db.close()
@@ -60,17 +78,24 @@ def third(path,file):
     try:
         with db:
             for row in payload.get('rows',[]):
-                key=str(row['id']);room=db.execute('SELECT status,version FROM room_slot WHERE id=?',(str(row['lesson']),)).fetchone()
+                key=str(row['id']);room=db.execute('SELECT * FROM room_slot WHERE id=?',(str(row['lesson']),)).fetchone()
                 teacher=db.execute('SELECT status FROM substitution WHERE id=?',(str(row['lesson']),)).fetchone()
+                lesson_body=json.loads(room['body']) if room else {}
                 required=set(row['required_classes']);received={r['class'] for r in row.get('receipts',[]) if r.get('version')==payload['version']}
+                class_versions={r['class']:r.get('version') for r in row.get('receipts',[])}
                 if not room or room['status']!='可用' or not teacher or teacher['status']!='已委托':status,reason='拒绝生效','schedule_unresolved'
                 elif room['version']!=payload['version']:status,reason='通知不全','stale_schedule_version'
                 elif not required or not required.issubset(received):status,reason='通知不全','receipt_missing'
                 else:status,reason='换班生效','all_parties_confirmed'
-                save(db,'notice_batch',key,source,payload['version'],{'lesson':row['lesson'],'required':sorted(required)},status,reason)
+                save(db,'notice_batch',key,source,payload['version'],
+                     {'lesson':row['lesson'],'required':sorted(required),
+                      'schedule_version':room['version'] if room else None,
+                      'lesson_end':lesson_body.get('end'),
+                      'class_versions':class_versions},status,reason,allow_revision=True)
                 for receipt in row.get('receipts',[]):
                     save(db,'notice_receipt',f"{key}:{receipt['class']}",source,payload['version'],receipt,
-                         '有效' if receipt.get('version')==payload['version'] else '旧版','version_check')
+                         '有效' if receipt.get('version')==payload['version'] else '旧版','version_check',
+                         allow_revision=True)
                 results.append(decide(db,'通知交付',key,status,reason,source))
         return results
     finally:db.close()
