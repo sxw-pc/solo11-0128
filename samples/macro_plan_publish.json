@@ -1,0 +1,20 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "M1",
+      "project": "P1",
+      "window": "W1",
+      "base_version": "v3",
+      "target_summary": "三年级数学调课-2026春",
+      "contract": "publish",
+      "steps": [
+        {"kind": "open"},
+        {"kind": "type", "text": "三年级数学调课"},
+        {"kind": "click", "action": "save_draft"},
+        {"kind": "click", "action": "publish"},
+        {"kind": "verify"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "E7",
+      "run": "M1",
+      "operator": "op-1",
+      "events": [
+        {
+          "kind": "publish_click",
+          "window": "W1",
+          "project": "P1",
+          "state": "edit:v3",
+          "at": "2026-01-01T09:00:00"
+        }
+      ],
+      "export": {
+        "project": "P1",
+        "published_version": "v3",
+        "published_summary": "旧版课表",
+        "generated_at": "2026-01-01T09:05:00",
+        "holder": null
+      }
+    }
+  ]
+}

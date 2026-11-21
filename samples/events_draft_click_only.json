@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "E2",
+      "run": "M2",
+      "operator": "op-1",
+      "events": [
+        {
+          "kind": "save_click",
+          "window": "W1",
+          "project": "P1",
+          "state": "draft:v3",
+          "at": "2026-01-01T09:00:00"
+        }
+      ]
+    }
+  ]
+}

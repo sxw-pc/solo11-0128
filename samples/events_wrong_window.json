@@ -1,0 +1,25 @@
+{
+  "version": "v1",
+  "rows": [
+    {
+      "id": "E4",
+      "run": "M1",
+      "operator": "op-1",
+      "events": [
+        {
+          "kind": "window_focus",
+          "window": "W2",
+          "project": "P1",
+          "at": "2026-01-01T08:59:00"
+        },
+        {
+          "kind": "publish_click",
+          "window": "W2",
+          "project": "P1",
+          "state": "edit:v3",
+          "at": "2026-01-01T09:00:00"
+        }
+      ]
+    }
+  ]
+}
